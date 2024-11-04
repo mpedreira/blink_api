@@ -1,0 +1,1686 @@
+openapi: 3.0.0
+info:
+  title: Blink API
+  version: '1.0'
+  description: >-
+    Unofficial documentation for the Client API of the Blink Wire-Free HD Home
+    Monitoring & Alert System. I am not affiliated with the company in any way -
+    this documentation is strictly "AS-IS". If you want to see an functional
+    python implementation you can find one in my profile
+    https://www.github.com/mpedreira
+servers:
+  - url: https://rest-{tier}.immedia-semi.com
+    variables:
+      '{tier}':
+        default: prod
+        enum:
+          - e001
+          - e002
+          - e003
+          - e004
+          - e005
+          - e006
+          - e007
+          - e008
+          - e009
+          - e010
+          - prod
+        description: >-
+          The app starts in the tier prod and, with the first login, it selects
+          the correct tier (it comes in the response of the server)
+    description: URL of Blink API
+paths:
+  /api/v5/account/login:
+    post:
+      summary: Login method for Blink
+      description: This is the method that you may use for authenticate and reauthenticate your client (every 24h). If you are reauthenticating, please, dont add client-name and add the literal 'true' to reauth
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login_payload'
+      tags:
+        - auth
+
+  /api/v4/account/{accountID}/client/{clientID}/logout:
+    post:
+      summary: Logout method for Blink
+      description: This is the method for logout your client
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/logout_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: accountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: accountID
+        - name: clientID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: clientID
+      security:
+        - blink_auth: []
+      tags:
+        - auth
+  /api/v4/account/{accountID}/client/{clientID}/pin/verify:
+    post:
+      summary: Send the pin to the server to verify it
+      description: This method let you send the pin to the server to verify it
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pin_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: accountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: accountID
+        - name: clientID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: clientID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pin_payload'
+      security:
+        - blink_auth: []
+      tags:
+        - auth
+  /network/{NetworkID}/camera/{CameraID}/disable:
+    post:
+      summary: Method for disable motion detection for the given Camera
+      description: This is the method that you may use for disable the motion detection for the given camera
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/camera_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraID
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /network/{NetworkID}/camera/{CameraID}/enable:
+    post:
+      summary: Method for enable motion detection for the given Camera
+      description: This is the method that you may use for enable the motion detection for the given camera
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/camera_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraID
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /api/v5/accounts/{AccountID}/networks/{NetworkID}/cameras/{CameraID}/liveview:
+    post:
+      summary: MAsk for a live video stream of the given camera
+      description: This is the method that you may use for have a live video stream of the given camera
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/livepreview_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraID
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/livepreview_payload'
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /media/production/account/{AccountId}/network/{NetworkID}/camera/{CameraId}/{clip_name}:
+    post:
+      summary: Method for retrieve the thumbnail of the given camera
+      description: Retrieve the JPEG thumbnail picture of the given camera. The URL path is specified in the thumbnail attribute of the camera, for example from the HomeScreen call. Add the .jpg extension to the URL path.
+      responses:
+        '200':
+          description: You will receive here a binary file with the image
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountId
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountId
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraId
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraId
+        - name: clip_name
+          description: The name of the clip
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: clip_name
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /network/{NetworkID}/camera/{CameraID}/clip:
+    post:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/camera_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraID
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /network/{NetworkID}/camera/{CameraID}/thumbnail:
+    post:
+      summary: Method for create a new thumbnail of the given camera
+      description: Set the thumbail by taking a snapshot of the current view of the camera.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/thumb_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CameraID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CameraID
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /network/{NetworkID}/owls/{OwlID}/thumbnail:
+    post:
+      summary: Method for create a new thumbnail of the given owl
+      description: Set the thumbail by taking a snapshot of the current view of the owl.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/thumb_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: OwlID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: OwlID
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /api/v1/accounts/{AccountID}/media/changed:
+    get:
+      summary: Method for retrieve the media events
+      description: Get Media (Generally video) events since the given timestamp in the query parm.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/camera_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+        - name: since
+          description: >-
+            a timestamp to return events since. e.g. 2020-08-03T16:50:24+0000.
+            The official mobile client seems to use the epoch to return all
+            available events - i.e. 1970-01-01T00:00:00+0000
+          in: query
+          required: true
+          schema:
+            type: string
+            title: since
+        - name: page
+          in: query
+          required: false
+          description: page number for multiple pages of results.
+          schema:
+            type: integer
+            title: page
+      security:
+        - blink_auth: []
+      tags:
+        - camera
+  /api/v1/accounts/{AccountID}/networks/{NetworkID}/state/arm:
+    post:
+      summary: Method for arm the given network
+      description: This is the method that you may use for arm the given network
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/network_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /api/v1/accounts/{AccountID}/networks/{NetworkID}/state/disarm:
+    post:
+      summary: Method for disarm the given network
+      description: This is the method that you may use for disarm the given network
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/network_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /network/{NetworkID}/command/{CommandID}:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/command_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: CommandID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: CommandID
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /api/v1/networks/{NetworkID}/programs/{ProgramID}/enable:
+    post:
+      summary: Method for enable the given schedule
+      description: This is the method that you may use for enable the given schedule
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: ProgramID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: ProgramID
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /api/v1/networks/{NetworkID}/programs:
+    post:
+      summary: Method for retrieve the schedules of the given network
+      description: This is the method return the schedules of the given network
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/programs_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /api/v1/networks/{NetworkID}/programs/{ProgramID}/update:
+    post:
+      summary: Method for update the given schedule
+      description: This is the method that you may use for update the given schedule
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/programs_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: NetworkID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: NetworkID
+        - name: ProgramID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: ProgramID
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/schedules_payload'
+      security:
+        - blink_auth: []
+      tags:
+        - network
+  /api/v1/accounts/{AccountID}/notifications/configuration:
+    get:
+      summary: Method for retrieve the notifications configuration
+      description: This is the method that you may use for retrieve the notifications configuration
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/notifications_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+      security:
+        - blink_auth: []
+      tags:
+        - system
+    post:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/standard_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/notifications_response'
+      security:
+        - blink_auth: []
+      tags:
+        - system
+  /api/v3/accounts/{AccountID}/homescreen:
+    get:
+      summary: Method for retrieve the homescreen
+      description: This is the method that you may use for retrieve the homescreen
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/homescreen_response'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      parameters:
+        - name: AccountID
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: AccountID
+      security:
+        - blink_auth: []
+      tags:
+        - system
+components:
+  securitySchemes:
+    blink_auth:
+      type: apiKey
+      in: header
+      name: token-auth
+  schemas:
+    homescreen_response:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1234
+            email_verified:
+              type: boolean
+              example: true
+            email_verification_required:
+              type: boolean
+              example: false
+        networks:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 5678
+              created_at:
+                type: string
+                format: date-time
+                example: '2016-01-03T22:37:59+00:00'
+              updated_at:
+                type: string
+                format: date-time
+                example: '2020-08-03T22:37:50+00:00'
+              name:
+                type: string
+                example: Network-Name
+              time_zone:
+                type: string
+                example: America/Chicago
+              dst:
+                type: boolean
+                example: true
+              armed:
+                type: boolean
+                example: true
+              lv_save:
+                type: boolean
+                example: false
+        sync_modules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 123456
+              created_at:
+                type: string
+                format: date-time
+                example: '2017-09-16T15:45:36+00:00'
+              updated_at:
+                type: string
+                format: date-time
+                example: '2020-08-09T00:00:31+00:00'
+              onboarded:
+                type: boolean
+                example: true
+              status:
+                type: string
+                example: online
+              name:
+                type: string
+                example: My Blink Sync Module
+              serial:
+                type: string
+                example: '123456789'
+              fw_version:
+                type: string
+                example: 2.13.26
+              last_hb:
+                type: string
+                format: date-time
+                example: '2020-08-09T14:14:13+00:00'
+              wifi_strength:
+                type: integer
+                example: 5
+              network_id:
+                type: integer
+                example: 5678
+              enable_temp_alerts:
+                type: boolean
+                example: true
+        cameras:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1234
+              created_at:
+                type: string
+                format: date-time
+                example: '2016-01-03T23:15:42+00:00'
+              updated_at:
+                type: string
+                format: date-time
+                example: '2020-08-09T13:02:14+00:00'
+              name:
+                type: string
+                example: Camera Name
+              serial:
+                type: string
+                example: '123456789'
+              fw_version:
+                type: string
+                example: '2.151'
+              type:
+                type: string
+                example: white
+              enabled:
+                type: boolean
+                example: false
+              thumbnail:
+                type: string
+                example: >-
+                  /media/production/account/1234/network/5678/camera/1234/clip_name
+              status:
+                type: string
+                example: done
+              battery:
+                type: string
+                example: ok
+              usage_rate:
+                type: boolean
+                example: true
+              network_id:
+                type: integer
+                example: 5678
+              issues:
+                type: array
+                items:
+                  type: string
+              signals:
+                type: object
+                properties:
+                  lfr:
+                    type: integer
+                    example: 3
+                  wifi:
+                    type: integer
+                    example: 5
+                  temp:
+                    type: integer
+                    example: 68
+                  battery:
+                    type: integer
+                    example: 3
+        sirens:
+          type: array
+          items:
+            type: object
+        chimes:
+          type: array
+          items:
+            type: object
+        video_stats:
+          type: object
+          properties:
+            storage:
+              type: integer
+              example: 1
+            auto_delete_days:
+              type: integer
+              example: 7
+        doorbell_buttons:
+          type: array
+          items:
+            type: object
+        owls:
+          type: array
+          items:
+            type: object
+        app_updates:
+          type: object
+          properties:
+            message:
+              type: string
+              example: An app update is required
+            code:
+              type: integer
+              example: 105
+            update_available:
+              type: boolean
+              example: true
+            update_required:
+              type: boolean
+              example: true
+        device_limits:
+          type: object
+          properties:
+            camera:
+              type: integer
+              example: 10
+            chime:
+              type: integer
+              example: 5
+            doorbell_button:
+              type: integer
+              example: 2
+            owl:
+              type: integer
+              example: 10
+            siren:
+              type: integer
+              example: 5
+            total_devices:
+              type: integer
+              example: 20
+        whats_new:
+          type: object
+          properties:
+            updated_at:
+              type: integer
+              example: 20200622
+            url:
+              type: string
+              example: https://blinkforhome.com/blogs/updates
+    notifications_response:
+      type: object
+      properties:
+        notifications:
+          type: object
+          properties:
+            low_battery:
+              type: boolean
+              example: true
+            camera_offline:
+              type: boolean
+              example: true
+            camera_usage:
+              type: boolean
+              example: true
+            scheduling:
+              type: boolean
+              example: true
+            motion:
+              type: boolean
+              example: true
+            sync_module_offline:
+              type: boolean
+              example: true
+            temperature:
+              type: boolean
+              example: true
+            doorbell:
+              type: boolean
+              example: true
+            wifi:
+              type: boolean
+              example: true
+            lfr:
+              type: boolean
+              example: true
+            bandwidth:
+              type: boolean
+              example: true
+            battery_dead:
+              type: boolean
+              example: true
+    standard_response:
+      type: object
+      properties:
+        message:
+          type: string
+          example: logout
+    pin_payload:
+      properties:
+        pin:
+          type: integer
+          title: PIN
+      type: object
+      required:
+        - pin
+      title: Pin_payload
+    livepreview_payload:
+      properties:
+        intent:
+          type: string
+          title: PIN
+        motion_event_start_time:
+          type: string
+          title: PIN
+      type: object
+      required:
+        - pin
+      title: Pin_payload
+    schedules_payload:
+      properties:
+        id:
+          type: integer
+          title: Id
+        schedule:
+          type: array
+          title: Schedule
+          items:
+            $ref: '#/components/schemas/schedule_payload'
+        name:
+          type: string
+          title: Name
+        format:
+          type: string
+          title: Format
+      type: object
+      required:
+        - id
+        - schedule
+        - name
+        - format
+    schedule_payload:
+      properties:
+        dow:
+          type: array
+          title: Dow
+          items:
+            $ref: '#/components/schemas/dow_response'
+        devices:
+          type: array
+          title: Devices
+          items:
+            $ref: '#/components/schemas/device_response'
+        time:
+          type: string
+          title: Time
+        action:
+          type: string
+          title: Action
+      type: object
+      required:
+        - dow
+        - devices
+        - time
+        - action
+      title: schedule_payload
+    programs_response:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 123
+          network_id:
+            type: integer
+            example: 1234
+          status:
+            type: string
+            example: disabled
+          name:
+            type: string
+            example: Schedule Name
+          schedule:
+            type: array
+            items:
+              type: object
+              properties:
+                dow:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - mon
+                      - tue
+                      - wed
+                      - thu
+                      - fri
+                      - sat
+                      - sun
+                devices:
+                  type: array
+                  items:
+                    type: string
+                time:
+                  type: string
+                  format: date-time
+                  example: 2016-06-02 14:45:00 +0000
+                action:
+                  type: string
+                  example: arm
+          format:
+            type: string
+            example: v1
+    schedule_response:
+      properties:
+        dow:
+          type: array
+          title: Dow
+          items:
+            $ref: '#/components/schemas/dow_response'
+        devices:
+          type: array
+          title: Devices
+          items:
+            $ref: '#/components/schemas/device_response'
+        time:
+          type: string
+          title: Time
+        action:
+          type: string
+          title: Action
+      type: object
+      required:
+        - dow
+        - devices
+        - time
+        - action
+      title: schedule_response
+    dow_response:
+      type: string
+      title: dow_response
+    device_response:
+      properties:
+        id:
+          type: integer
+          title: Id
+        type:
+          type: string
+          title: Type
+      type: object
+      required:
+        - id
+        - type
+      title: device_response
+    livepreview_response:
+      type: object
+      properties:
+        command_id:
+          type: integer
+          example: 1234567890
+        join_available:
+          type: boolean
+          example: true
+        join_state:
+          type: string
+          example: available
+        server:
+          type: string
+          example: rtsps://<URL>
+        duration:
+          type: integer
+          example: 300
+        continue_interval:
+          type: integer
+          example: 30
+        continue_warning:
+          type: integer
+          example: 10
+        submit_logs:
+          type: boolean
+          example: true
+        new_command:
+          type: boolean
+          example: true
+        media_id:
+          type: integer
+          nullable: true
+          example: null
+        options:
+          type: object
+          example: {}
+    camera_response:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123456789
+        created_at:
+          type: string
+          format: date-time
+          example: '2020-08-09T22:20:16+00:00'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2020-08-09T22:20:16+00:00'
+        execute_time:
+          type: string
+          format: date-time
+          example: '2020-08-09T22:20:16+00:00'
+        command:
+          type: string
+          example: config_lfr
+        state_stage:
+          type: string
+          example: rest
+        stage_rest:
+          type: string
+          format: date-time
+          example: '2020-08-09T22:20:16+00:00'
+        stage_cs_db:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_cs_sent:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_sm:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_dev:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_is:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_lv:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        stage_vs:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        state_condition:
+          type: string
+          example: new
+        sm_ack:
+          type: string
+          nullable: true
+          example: null
+        lfr_ack:
+          type: string
+          nullable: true
+          example: null
+        sequence:
+          type: integer
+          nullable: true
+          example: null
+        attempts:
+          type: integer
+          example: 0
+        transaction:
+          type: string
+          example: aTransactionID
+        player_transaction:
+          type: string
+          example: aPlayTransactionID
+        server:
+          type: string
+          nullable: true
+          example: null
+        duration:
+          type: integer
+          nullable: true
+          example: null
+        by_whom:
+          type: string
+          example: device name - client version - unique hash
+        diagnostic:
+          type: boolean
+          example: false
+        debug:
+          type: string
+          example: ''
+        opts_1:
+          type: integer
+          example: 0
+        target:
+          type: string
+          example: camera
+        target_id:
+          type: integer
+          example: 5678
+        parent_command_id:
+          type: integer
+          nullable: true
+          example: null
+        camera_id:
+          type: integer
+          example: 5678
+        siren_id:
+          type: integer
+          nullable: true
+          example: null
+        firmware_id:
+          type: integer
+          nullable: true
+          example: null
+        network_id:
+          type: integer
+          example: 1234
+        account_id:
+          type: integer
+          example: 1234
+        sync_module_id:
+          type: integer
+          example: 123456
+    login_payload:
+      properties:
+        email:
+          type: string
+          title: email
+          example: me@gmail.com
+        password:
+          type: string
+          title: password
+          example: tH1s1s4P@ssw0rd
+        unique_id:
+          type: string
+          title: unique_id
+          example: BlinkCamera_99999999-9999-9999-9999-999999999999
+        client_id:
+          type: integer
+          title: client_id
+          example: 123456
+        reauth:
+          type: string
+          title: reauth
+          example: true
+      type: object
+      required:
+        - email
+        - password
+      title: Pin_payload
+    login_error_response:
+      properties:
+        message:
+          type: string
+          title: Error
+        code:
+          type: integer
+          title: Error
+      type: object
+      required:
+        - message
+        - code
+      title: Login_error_response
+    thumb_response:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1678210511
+        network_id:
+          type: integer
+          example: 158164
+        command:
+          type: string
+          example: thumbnail
+        state:
+          type: string
+          example: new
+    network_response:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123456789
+        network_id:
+          type: integer
+          example: 1234
+        command:
+          type: string
+          example: arm
+        state:
+          type: string
+          example: new
+        commands:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 123456780
+              network_id:
+                type: integer
+                example: 1234
+              command:
+                type: string
+                example: config_lfr
+              state:
+                type: string
+                example: running
+    commands_response:
+      properties:
+        complete:
+          type: boolean
+          title: Complete
+        status:
+          type: integer
+          title: Status
+        status_msg:
+          type: string
+          title: Status Msg
+        media_id:
+          type: string
+          title: Media Id
+        commands:
+          type: array
+          title: Commands
+          items:
+            $ref: '#/components/schemas/command_response'
+      type: object
+      required:
+        - complete
+        - status
+        - status_msg
+        - media_id
+        - commands
+    command_response:
+      properties:
+        id:
+          type: integer
+          title: Id
+        network_id:
+          type: integer
+          title: Network Id
+        command:
+          type: string
+          title: Command
+        state:
+          type: string
+          title: State
+      type: object
+      required:
+        - id
+        - network_id
+        - command
+        - state
+      title: commands_response
+    pin_response:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        require_new_pin:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Client has been successfully verified
+        code:
+          type: integer
+          example: 1234
+    logout_response:
+      properties:
+        message:
+          type: string
+          title: Error
+      type: object
+      required:
+        - message
+      title: Logout_response
+    Login_response:
+      type: object
+      properties:
+        account:
+          type: object
+          properties:
+            account_id:
+              type: integer
+              example: 1234
+            user_id:
+              type: integer
+              example: 123456
+            client_id:
+              type: integer
+              example: 1234567
+            new_account:
+              type: boolean
+              example: false
+            tier:
+              type: string
+              example: e002
+            region:
+              type: string
+              example: eu
+            account_verification_required:
+              type: boolean
+              example: false
+            phone_verification_required:
+              type: boolean
+              example: false
+            client_verification_required:
+              type: boolean
+              example: false
+            verification_channel:
+              type: string
+              example: phone
+        auth:
+          type: object
+          properties:
+            token:
+              type: string
+              example: anAuthTokenString
+        phone:
+          type: object
+          properties:
+            number:
+              type: string
+              example: +49*******1234
+            last_4_digits:
+              type: string
+              example: '1234'
+            country_calling_code:
+              type: string
+              example: '49'
+            valid:
+              type: boolean
+              example: true
+        verification:
+          type: object
+          properties:
+            email:
+              type: object
+              properties:
+                required:
+                  type: boolean
+                  example: false
+            phone:
+              type: object
+              properties:
+                required:
+                  type: boolean
+                  example: true
+                channel:
+                  type: string
+                  example: sms
+        lockout_time_remaining:
+          type: integer
+          example: 0
+        force_password_reset:
+          type: boolean
+          example: false
+        allow_pin_resend_seconds:
+          type: integer
+          example: 60
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+    auth:
+      properties:
+        token:
+          type: string
+          title: Token
+      type: object
+      required:
+        - token
+      title: auth
+    email_verification:
+      properties:
+        required:
+          type: boolean
+          title: Required
+      type: object
+      required:
+        - required
+      title: email_verification
+    phone:
+      properties:
+        number:
+          type: string
+          title: Number
+        last_4_digits:
+          type: string
+          title: Last 4 Digits
+        country_calling_code:
+          type: string
+          title: Country Calling Code
+        valid:
+          type: boolean
+          title: Valid
+      type: object
+      required:
+        - number
+        - last_4_digits
+        - country_calling_code
+        - valid
+      title: phone
+    phone_verification:
+      properties:
+        required:
+          type: boolean
+          title: Required
+        channel:
+          type: string
+          title: Channel
+      type: object
+      required:
+        - required
+        - channel
+      title: phone_verification
+    unautorized:
+      properties:
+        message:
+          type: string
+          title: Message
+        code:
+          type: integer
+          title: Code
+      type: object
+      required:
+        - message
+        - code
+      title: unautorized
+    verification:
+      properties:
+        email:
+          $ref: '#/components/schemas/email_verification'
+        phone:
+          $ref: '#/components/schemas/phone_verification'
+      type: object
+      required:
+        - email
+        - phone
+      title: verification
+externalDocs:
+  url: https://github.com/MattTW/BlinkMonitorProtocol/tree/master
+  description: Based in the work of MattTW
