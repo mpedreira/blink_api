@@ -9,25 +9,17 @@ info:
     python implementation you can find one in my profile
     https://www.github.com/mpedreira
 servers:
-  - url: https://rest-{tier}.immedia-semi.com
-    variables:
-      '{tier}':
-        default: prod
-        enum:
-          - e001
-          - e002
-          - e003
-          - e004
-          - e005
-          - e006
-          - e007
-          - e008
-          - e009
-          - e010
-          - prod
-        description: >-
-          The app starts in the tier prod and, with the first login, it selects
-          the correct tier (it comes in the response of the server)
+  - url: https://rest-prod.immedia-semi.com
+  - url: https://rest-e001.immedia-semi.com
+  - url: https://rest-e002.immedia-semi.com
+  - url: https://rest-e003.immedia-semi.com
+  - url: https://rest-e004.immedia-semi.com
+  - url: https://rest-e005.immedia-semi.com
+  - url: https://rest-e006.immedia-semi.com
+  - url: https://rest-e007.immedia-semi.com
+  - url: https://rest-e008.immedia-semi.com
+  - url: https://rest-e009.immedia-semi.com
+  - url: https://rest-e010.immedia-semi.com
     description: URL of Blink API
 paths:
   /api/v5/account/login:
