@@ -360,6 +360,133 @@ paths:
         - blink_auth: []
       tags:
         - camera
+  /api/v1/accounts/{account_id}/networks/{network_id}/sync_modules/{sync_id}/local_storage/manifest/request:
+    post:
+      description: 'Request the local storage manifest be created by the sync module. As far as sync module is async, this allows you to request an update from it'
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: account_id
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: network_id
+        - name: sync_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: sync_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestResponse'
+        '409':
+          description: Not Procesed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestStatusResponseWait'
+      tags:
+        - sync_module
+
+  /api/v1/accounts/{account_id}/networks/{network_id}/sync_modules/{sync_id}/local_storage/manifest/request/{manifest_request_id}:
+    get:
+      description: 'Retrieve the information regarding the local storage manifest request. This is a polling endpoint, you should call it until you get a 200 response'
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: account_id
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: network_id
+        - name: sync_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: sync_id
+        - name: manifest_request_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: manifest_request_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestResponse'
+        '409':
+          description: Not Procesed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestStatusResponseWait'
+      tags:
+        - sync_module
+
+  /api/v1/accounts/{account_id}/networks/{network_id}/sync_modules/{sync_id}/local_storage/manifest/{manifest_id}/clip/request/{clip_id}:
+    get:
+      description: 'Retrieve the information regarding the local storage manifest request. This is a polling endpoint, you should call it until you get a 200 response'
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: account_id
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: network_id
+        - name: sync_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: sync_id
+        - name: manifest_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: manifest_id
+        - name: clip_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            title: clip_id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse'
+      tags:
+        - sync_module
+
+
   /network/{NetworkID}/owls/{OwlID}/thumbnail:
     post:
       summary: Method for create a new thumbnail of the given owl
@@ -737,6 +864,34 @@ components:
       in: header
       name: token-auth
   schemas:
+    ManifestStatusResponseWait:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Manifest command is in process, please wait"
+        code:
+          type: integer
+          example: 2113
+    ManifestResponse:
+      type: object
+      properties:
+        version:
+          type: string
+          example: "1.0"
+        manifest_id:
+          type: string
+          example: "1537"
+        clips:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "495267667"
+              size:
+                type: string
     homescreen_response:
       type: object
       properties:
@@ -963,6 +1118,20 @@ components:
             url:
               type: string
               example: https://blinkforhome.com/blogs/updates
+    NetworkResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for the entity.
+          example: 1765806851
+        network_id:
+          type: integer
+          description: The network identifier associated with this entity.
+          example: 999999
+      required:
+        - id
+        - network_id
     notifications_response:
       type: object
       properties:
@@ -1683,4 +1852,4 @@ components:
       title: verification
 externalDocs:
   url: https://github.com/MattTW/BlinkMonitorProtocol/tree/master
-  description: Based in the work of MattTW
+  description: Initially based in the work of MattTW
