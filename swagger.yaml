@@ -20,32 +20,198 @@ servers:
   - url: https://rest-e008.immedia-semi.com
   - url: https://rest-e009.immedia-semi.com
   - url: https://rest-e010.immedia-semi.com
-    description: URL of Blink API
+  - url: https://api.oauth.blink.com
+    description: OAuth 2.0 Authorization Server
 paths:
-  /api/v5/account/login:
-    post:
-      summary: Login method for Blink
-      description: This is the method that you may use for authenticate and reauthenticate your client (every 24h). If you are reauthenticating, please, dont add client-name and add the literal 'true' to reauth
+  /oauth/v2/authorize:
+    get:
+      servers:
+        - url: https://api.oauth.blink.com
+      summary: "Step 1 – Initiate OAuth PKCE flow"
+      description: >
+        Starts the Authorization Code + PKCE flow. Sets session cookies on the
+        OAuth server. Must be called before POST /oauth/v2/signin.
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: ios
+        - name: code_challenge
+          in: query
+          required: true
+          schema:
+            type: string
+            example: base64url-encoded-SHA256-of-verifier
+        - name: code_challenge_method
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [S256]
+        - name: hardware_id
+          in: query
+          required: true
+          schema:
+            type: string
+            example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            example: immedia-blink://applinks.blink.com/signin/callback
+        - name: response_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [code]
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            example: client
+        - name: app_brand
+          in: query
+          schema:
+            type: string
+            example: blink
+        - name: app_version
+          in: query
+          schema:
+            type: string
+            example: '50.1'
+        - name: device_brand
+          in: query
+          schema:
+            type: string
+            example: Apple
+        - name: device_model
+          in: query
+          schema:
+            type: string
+            example: iPhone16,1
+        - name: device_os_version
+          in: query
+          schema:
+            type: string
+            example: '26.1'
       responses:
         '200':
-          description: OK
+          description: HTML signin page. Session cookies are set for subsequent calls.
+      tags:
+        - auth
+
+  /oauth/v2/signin:
+    get:
+      servers:
+        - url: https://api.oauth.blink.com
+      summary: "Step 2 – Get signin page and CSRF token"
+      description: >
+        Returns the HTML signin page. Extract the CSRF token from the JSON block
+        inside <script id="oauth-args" type="application/json">.
+      responses:
+        '200':
+          description: HTML signin page containing the embedded CSRF token.
+      tags:
+        - auth
+    post:
+      servers:
+        - url: https://api.oauth.blink.com
+      summary: "Step 3 – Submit credentials"
+      description: >
+        Submits username, password and csrf-token as application/x-www-form-urlencoded.
+        Returns 412 when 2FA is required (call POST /oauth/v2/2fa/verify next).
+        Returns a 3xx redirect with the auth code when 2FA is not configured.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthSigninPayload'
+      responses:
+        '302':
+          description: >
+            Direct auth-code redirect (no 2FA). Follow Location header back to
+            GET /oauth/v2/authorize then exchange the code at POST /oauth/token.
+        '412':
+          description: 2FA required. Send OTP to POST /oauth/v2/2fa/verify.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Login_response'
+                $ref: '#/components/schemas/OAuth2faRequired'
         '401':
-          description: Not authenticated
+          description: Invalid credentials.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/login_error_response'
+      tags:
+        - auth
+
+  /oauth/v2/2fa/verify:
+    post:
+      servers:
+        - url: https://api.oauth.blink.com
+      summary: "Step 3b – Verify 2FA OTP"
+      description: >
+        Verifies the SMS one-time password received after a 412 from
+        POST /oauth/v2/signin. On success (201) the session is authorised;
+        follow with GET /oauth/v2/authorize then POST /oauth/token.
       requestBody:
-        description: Optional description in *Markdown*
         required: true
         content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/login_payload'
+              $ref: '#/components/schemas/OAuth2faPayload'
+      responses:
+        '201':
+          description: 2FA verified. Session is now authorised.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuth2faResponse'
+        '401':
+          description: Invalid or expired OTP.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
+      tags:
+        - auth
+
+  /oauth/token:
+    post:
+      servers:
+        - url: https://api.oauth.blink.com
+      summary: "Steps 5 & 7 – Exchange auth code or refresh access token"
+      description: >
+        Two uses depending on grant_type.
+        authorization_code: exchange the PKCE auth code + code_verifier for
+        access_token and refresh_token (Steps 4-5 of the PKCE flow).
+        refresh_token: silent renewal using the stored refresh_token, no 2FA needed.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OAuthTokenPayload'
+      responses:
+        '200':
+          description: Tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthTokenResponse'
+        '400':
+          description: Invalid grant or missing parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_error_response'
       tags:
         - auth
 
@@ -79,46 +245,6 @@ paths:
           schema:
             type: integer
             title: clientID
-      security:
-        - blink_auth: []
-      tags:
-        - auth
-  /api/v4/account/{accountID}/client/{clientID}/pin/verify:
-    post:
-      summary: Send the pin to the server to verify it
-      description: This method let you send the pin to the server to verify it
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/pin_response'
-        '401':
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/login_error_response'
-      parameters:
-        - name: accountID
-          in: path
-          required: true
-          schema:
-            type: integer
-            title: accountID
-        - name: clientID
-          in: path
-          required: true
-          schema:
-            type: integer
-            title: clientID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/pin_payload'
       security:
         - blink_auth: []
       tags:
@@ -852,9 +978,10 @@ paths:
 components:
   securitySchemes:
     blink_auth:
-      type: apiKey
-      in: header
-      name: token-auth
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer
+      description: 'Access token from POST /oauth/token. Send as: Authorization: Bearer <access_token>'
   schemas:
     ManifestStatusResponseWait:
       type: object
@@ -1172,15 +1299,6 @@ components:
         message:
           type: string
           example: logout
-    pin_payload:
-      properties:
-        pin:
-          type: integer
-          title: PIN
-      type: object
-      required:
-        - pin
-      title: Pin_payload
     livepreview_payload:
       properties:
         intent:
@@ -1503,33 +1621,82 @@ components:
         sync_module_id:
           type: integer
           example: 123456
-    login_payload:
+    OAuthSigninPayload:
+      type: object
+      description: Form fields for POST /oauth/v2/signin
       properties:
-        email:
+        username:
           type: string
-          title: email
           example: me@gmail.com
         password:
           type: string
-          title: password
           example: tH1s1s4P@ssw0rd
-        unique_id:
+        'csrf-token':
           type: string
-          title: unique_id
-          example: BlinkCamera_99999999-9999-9999-9999-999999999999
-        client_id:
-          type: integer
-          title: client_id
-          example: 123456
-        reauth:
-          type: string
-          title: reauth
-          example: true
-      type: object
+          example: abc123def456
       required:
-        - email
+        - username
         - password
-      title: Pin_payload
+        - 'csrf-token'
+      title: OAuthSigninPayload
+    OAuth2faPayload:
+      type: object
+      description: Form fields for POST /oauth/v2/2fa/verify
+      properties:
+        '2fa_code':
+          type: string
+          example: '123456'
+        'csrf-token':
+          type: string
+          example: abc123def456
+        remember_me:
+          type: string
+          enum: ['true', 'false']
+          example: 'false'
+      required:
+        - '2fa_code'
+        - 'csrf-token'
+      title: OAuth2faPayload
+    OAuthTokenPayload:
+      type: object
+      description: >
+        Form fields for POST /oauth/token.
+        Use grant_type=authorization_code for PKCE code exchange or
+        grant_type=refresh_token for silent renewal.
+      properties:
+        grant_type:
+          type: string
+          enum: [authorization_code, refresh_token]
+          example: authorization_code
+        client_id:
+          type: string
+          example: ios
+        scope:
+          type: string
+          example: client
+        hardware_id:
+          type: string
+          example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        code:
+          type: string
+          description: Authorization code. Required for authorization_code grant.
+        code_verifier:
+          type: string
+          description: PKCE verifier. Required for authorization_code grant.
+        redirect_uri:
+          type: string
+          example: immedia-blink://applinks.blink.com/signin/callback
+          description: Required for authorization_code grant.
+        refresh_token:
+          type: string
+          description: Required for refresh_token grant.
+        app_brand:
+          type: string
+          example: blink
+      required:
+        - grant_type
+        - client_id
+      title: OAuthTokenPayload
     login_error_response:
       properties:
         message:
@@ -1637,21 +1804,27 @@ components:
         - command
         - state
       title: commands_response
-    pin_response:
+    OAuth2faRequired:
       type: object
+      description: Returned with HTTP 412 when 2FA is required after POST /oauth/v2/signin
       properties:
-        valid:
+        '2fa_required':
           type: boolean
           example: true
-        require_new_pin:
-          type: boolean
-          example: false
         message:
           type: string
-          example: Client has been successfully verified
-        code:
-          type: integer
-          example: 1234
+          example: '2FA code required. Send the SMS code to /send_2fa.'
+      title: OAuth2faRequired
+    OAuth2faResponse:
+      type: object
+      description: Returned with HTTP 201 on successful 2FA verification
+      properties:
+        status:
+          type: string
+          example: auth-completed
+      required:
+        - status
+      title: OAuth2faResponse
     logout_response:
       properties:
         message:
@@ -1661,90 +1834,29 @@ components:
       required:
         - message
       title: Logout_response
-    Login_response:
+    OAuthTokenResponse:
       type: object
+      description: Response from POST /oauth/token (both code exchange and refresh)
       properties:
-        account:
-          type: object
-          properties:
-            account_id:
-              type: integer
-              example: 1234
-            user_id:
-              type: integer
-              example: 123456
-            client_id:
-              type: integer
-              example: 1234567
-            new_account:
-              type: boolean
-              example: false
-            tier:
-              type: string
-              example: e002
-            region:
-              type: string
-              example: eu
-            account_verification_required:
-              type: boolean
-              example: false
-            phone_verification_required:
-              type: boolean
-              example: false
-            client_verification_required:
-              type: boolean
-              example: false
-            verification_channel:
-              type: string
-              example: phone
-        auth:
-          type: object
-          properties:
-            token:
-              type: string
-              example: anAuthTokenString
-        phone:
-          type: object
-          properties:
-            number:
-              type: string
-              example: +49*******1234
-            last_4_digits:
-              type: string
-              example: '1234'
-            country_calling_code:
-              type: string
-              example: '49'
-            valid:
-              type: boolean
-              example: true
-        verification:
-          type: object
-          properties:
-            email:
-              type: object
-              properties:
-                required:
-                  type: boolean
-                  example: false
-            phone:
-              type: object
-              properties:
-                required:
-                  type: boolean
-                  example: true
-                channel:
-                  type: string
-                  example: sms
-        lockout_time_remaining:
+        access_token:
+          type: string
+          example: eyJhbGciOiJSUzI1NiJ9...
+        refresh_token:
+          type: string
+          example: eyJhbGciOiJSUzI1NiJ9...
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
           type: integer
-          example: 0
-        force_password_reset:
-          type: boolean
-          example: false
-        allow_pin_resend_seconds:
-          type: integer
-          example: 60
+          example: 3600
+        scope:
+          type: string
+          example: client
+      required:
+        - access_token
+        - token_type
+      title: OAuthTokenResponse
     ValidationError:
       properties:
         loc:
